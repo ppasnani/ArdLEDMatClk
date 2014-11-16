@@ -6,7 +6,6 @@ int resetPin = 5;
 int countIter = 0;
 int powerPinArray[5] = {2, 3, 4, 6, 10};
 
-//Gif test
 int ledArray[14][5]={
   //Top ------- Bottom
     {1, 1, 1, 1, 1},
@@ -42,17 +41,21 @@ void setup(){
 }
 
 void loop(){
-  //Count from 0 to 255 and display the number
-  //on the LEDS
+  //Count up to a certain number of times to display each
+  //frame
   if (countIter >= 25){
     lifeStep();
     countIter = 0;  
   }
   lightLeds();
   countIter++;
-  //lifeStep();
-  //delay(1000);
 }
+
+//Requires: An existing array of size 14x5 containing
+//          1 for live cell and 0 for dead cell
+//Ensures: Determines and sets the array for the next
+//          generation based on the rules of the game
+//          of life
 
 void lifeStep(){
   int nextGen[14][5];
@@ -167,7 +170,6 @@ void lightLeds(){
     }
     
     for (int j = 0; j < 5; j++){
-      //Serial.print(ledArray[i][j]);
       if (ledArray [i][4-j] == 1){
         thirdByte |= (1 << j);  
         //digitalWrite(powerPinArray[j], HIGH);
@@ -184,16 +186,12 @@ void lightLeds(){
     
     digitalWrite(latchPin, HIGH);
     digitalWrite(resetPin, LOW);
-    /*for (int k =0; k < 5; k++){
-      digitalWrite(powerPinArray[k], LOW);
-    }*/
     
-    //Shift left by 4 first to have bit 4 for pin 6
     //starting          B0005 4321 
     //we want   portD = Bx4x3 21xx
     //we want thidByte(pins) = Bx6x4 32xx
     int topBit = (thirdByte & (1 <<  3)) << 3;
-    //Remove top bit and left shift by 2
+    //Remove top bits and left shift by 2
     PORTD |= thirdByte << 2;
     PORTD &= ~(3 << 5);
     PORTD |= topBit;
@@ -213,14 +211,5 @@ void lightLeds(){
     PORTD = 0;
     PORTB = 0;
   }
-    
-    //Serial.print(firstByte);
-    //Serial.print(" Second: ");
-    //Serial.println(secondByte);
-   /*for(int i = 7; i < 14; i++){
-     if (ledArray[i][j] == true){
-       
-     }
-   }*/
 }
 
