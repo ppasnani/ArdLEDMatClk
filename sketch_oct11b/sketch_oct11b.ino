@@ -6,6 +6,48 @@ int resetPin = 5;
 int countIter = 0;
 int powerPinArray[5] = {2, 3, 4, 6, 10};
 
+const int LEDNumbers[10][3][5]={
+  {{1, 1, 1, 1, 1},
+   {1, 0, 0, 0, 1},
+   {1, 1, 1, 1, 1}},
+  
+  {{0, 0, 0, 0, 0},
+   {1, 1, 1, 1, 1},
+   {0, 0, 0, 0, 0}},
+   
+  {{1, 1, 1, 0, 1},
+   {1, 0, 1, 0, 1},
+   {1, 0, 1, 1, 1}},
+  
+  {{1, 1, 1, 1, 1},
+   {1, 0, 1, 0, 1},
+   {1, 0, 1, 0, 1}},
+  
+  {{1, 1, 1, 1, 1},
+   {0, 0, 1, 0, 0},
+   {1, 1, 1, 0, 0}},
+  
+  {{1, 0, 1, 1, 1},
+   {1, 0, 1, 0, 1},
+   {1, 1, 1, 0, 1}},
+  
+  {{0, 0, 1, 1, 1},
+   {1, 0, 1, 0, 1},
+   {1, 1, 1, 1, 1}},
+  
+  {{1, 1, 1, 1, 1},
+   {1, 0, 0, 0, 0},
+   {1, 0, 0, 0, 0}},
+  
+  {{1, 1, 1, 1, 1},
+   {1, 0, 1, 0, 1},
+   {1, 1, 1, 1, 1}},
+  
+  {{1, 1, 1, 1, 1},
+   {1, 0, 1, 0, 0},
+   {1, 1, 1, 0, 0}} 
+};
+
 int ledArray[14][5]={
   //Top ------- Bottom
     {1, 1, 1, 1, 1},
@@ -22,7 +64,7 @@ int ledArray[14][5]={
     {0, 0, 0, 0, 0},
     {0, 0, 0, 0, 0},
     {1, 1, 1, 1, 1},
-    {0, 1, 0, 0, 0}
+    {0, 0, 0, 0, 0}
   };
 
 void setup(){
@@ -40,15 +82,39 @@ void setup(){
   Serial.println("Ready");
 }
 
+int toDisplay = 0;
+
 void loop(){
   //Count up to a certain number of times to display each
   //frame
-  if (countIter >= 25){
-    lifeStep();
+
+  if (countIter >= 250){
+    //lifeStep();
+    displayNum(toDisplay, 0);
+    displayNum(toDisplay, 4);
+    displayNum(toDisplay, 7);
+    displayNum(toDisplay, 11);
+    Serial.println(toDisplay);
+    toDisplay++;
+    if (toDisplay >= 10){
+      toDisplay = 0;
+    }
     countIter = 0;  
   }
   lightLeds();
   countIter++;
+}
+
+//Requires: An integer 0 <= num <= 9 and a position 0 <= pos <= 11
+//          to insert anywhere on the matrix with width of 3
+//Ensures: The ledArray variable is changed to display
+//          the num at the appropriate position
+void displayNum(int num, int pos){
+  for (int i = pos; i < pos + 3; i++){
+    for (int k = 0; k < 5; k++){
+      ledArray[i][k] = LEDNumbers[num][i-pos][k];  
+    }  
+  }
 }
 
 //Requires: An existing array of size 14x5 containing
