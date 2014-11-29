@@ -1,7 +1,14 @@
+#include <DS3232RTC.h>
+#include <Time.h>
+#include <Wire.h>
+
 int dataPin = 9; //PCINT8 //DS
 int clockPin = 7; //PCINT9 //SHCP
 int latchPin = 8; //PCINT10 //STCP
 int resetPin = 5;
+
+int setSwitchPin = 12;
+int iterSwitchPin = 11;
 
 int countIter = 0;
 int powerPinArray[5] = {2, 3, 4, 6, 10};
@@ -79,30 +86,126 @@ void setup(){
   pinMode(powerPinArray[2], OUTPUT);
   pinMode(powerPinArray[3], OUTPUT);
   pinMode(powerPinArray[4], OUTPUT);
+  
+  pinMode(setSwitchPin, INPUT);
+  pinMode(iterSwitchPin, INPUT);
+  
   Serial.println("Ready");
 }
 
-int toDisplay = 0;
+int lastSecond = 0;
+int lastMinute = 0;
+
+int lastSetStatus = 0;
+int lastIterStatus = 0;
+
+//Goes from 0 to 1 to 2 back to 0
+//Where in state 0, its a normal display
+//In state 1, the minute can be iterated
+//In state 2, the hour can be iterated
+int setState = 0;
 
 void loop(){
   //Count up to a certain number of times to display each
   //frame
+  time_t myTime = RTC.get();
+  int currentSecond = second(myTime);
+  int currentMinute = minute(myTime);
+  int currentHour = hour(myTime);
 
-  if (countIter >= 250){
+  if (currentSecond != lastSecond){
+    //displayNum(currentSecond % 10, 0);
+    //displayNum(floor(currentSecond/10.0), 4);
+    lifeStep();
+    lastSecond = currentSecond;
+  }
+  
+  if(currentMinute != lastMinute || 
+    currentSecond % 10 == 0 ||
+    setState == 1 || setState == 2){
+      
+    displayNum(currentMinute % 10, 0);
+    displayNum(floor(currentMinute/10.0), 4);
+    
+    displayNum(currentHour % 10, 7);
+    displayNum(floor(currentHour/10.0), 11); 
+    
+    lastMinute = currentMinute;
+    lastSecond = currentSecond;
+  }
+  
+  int setStatus = digitalRead(setSwitchPin);
+  int iterStatus = digitalRead(iterSwitchPin);
+  
+  //Button goes from up to pressed
+  if (lastIterStatus == 0 && iterStatus == 1){
+      tmElements_t tm;
+      if (setState == 1){
+        tm.Hour = currentHour;
+        tm.Minute = currentMinute + 1;  
+      }else if (setState == 2){
+        tm.Hour = currentHour + 1;
+        tm.Minute = currentMinute; 
+      }else{
+        tm.Hour = currentHour;
+        tm.Minute = currentMinute; 
+      }
+      
+      tm.Second = currentSecond;
+      tm.Day = day(myTime);
+      tm.Month = month(myTime);
+      tm.Year = year(myTime);
+      RTC.write(tm);
+      Serial.print(" Setting Minute to: ");
+      Serial.println(tm.Minute);
+      
+  }
+  
+  if (lastSetStatus == 0 && setStatus == 1){
+    setState++;
+    if (setState >= 3){
+      setState = 0;  
+    }
+  }
+  
+  Serial.print("Set: ");
+  Serial.print(setStatus);
+  Serial.print(", Iter: ");
+  Serial.println(iterStatus);
+  
+  lastIterStatus = iterStatus;
+  lastSetStatus = setStatus;
+  
+  lightLeds();
+  
+  /*if (countIter >= 50 && countIter < 75){
     //lifeStep();
     displayNum(toDisplay, 0);
     displayNum(toDisplay, 4);
     displayNum(toDisplay, 7);
     displayNum(toDisplay, 11);
-    Serial.println(toDisplay);
-    toDisplay++;
-    if (toDisplay >= 10){
-      toDisplay = 0;
+    
+  }else if(countIter >= 75 && countIter < 175){
+    if (twoCountIter >= 10){
+      lifeStep();
+      twoCountIter = 0;  
     }
-    countIter = 0;  
-  }
+    twoCountIter++;        
+  }else if(countIter >= 175){
+    //Where the numbers are iterated
+    toDisplay++;
+    if(toDisplay >= 10){
+      toDisplay = 0;  
+    }
+    time_t myTime;
+    myTime = RTC.get();
+    Serial.print("Second: ");
+    Serial.println(second(myTime));
+    countIter = 0; 
+  } 
+  
   lightLeds();
-  countIter++;
+  countIter++;*/
 }
 
 //Requires: An integer 0 <= num <= 9 and a position 0 <= pos <= 11
